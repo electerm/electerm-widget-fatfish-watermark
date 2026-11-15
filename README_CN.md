@@ -60,12 +60,13 @@ electerm/electerm-widget-fatfish-watermark
 
 ### 不会覆盖你自己的背景设置
 
-插件的 UI 是沙箱 iframe，碰不到应用 DOM；`main.js` 跑在主进程，用 `webContents.insertCSS()` 从外部给窗口注入样式。另一段很短的 renderer 脚本会读取 electerm 自己的 `#css-overwrite-terminal-backgrounds` 样式表，在 `<html>` 上写两个属性：`data-fatfish-style`（表单里选的风格）和 `data-fatfish-watermark`：
+样式表应用在 electerm 自己的文档里，每条选择器都要求 `<html data-terminal-background="default">`——这是 electerm 在画自带字标时设的属性。你自己设了背景图、文字水印、标签序号或「无背景」，属性就是 `custom`，这里所有规则都不再匹配。纯 css，应用文档里不跑任何脚本。
 
-- 当前是自带默认字标 → `"on"`，我们的样式生效；
-- 你自己设了背景图、文字水印、标签序号或「无背景」 → `"off"`，整段样式不再匹配。
+样式表挂在运行中的实例上，所以 widget 运行期间每个新加载的窗口都会被重新应用，**Stop** 时移除。
 
-这个开关是绑在该 `<style>` 标签上的 `MutationObserver`，改背景设置会立刻生效。注入的样式表只属于当前文档，因此每次窗口重载都会重新注入，之后新开的窗口也会覆盖到。
+### 对宿主的要求
+
+`main.js` 是普通 node 模块，只读自己的文件，调用 `require('@electerm/widget-api').css.apply(css)`。它不 `require` `electron`，因此没有任何桌面专属成分：同一个文件夹在 electerm-web 里也能用，那边的应用文档属于浏览器。
 
 ## 关于素材
 
@@ -74,7 +75,7 @@ electerm/electerm-widget-fatfish-watermark
 ## 其他说明
 
 - 独立工作：不读写内置的 **设置 → 通用 → 自定义 CSS**，也不改任何终端背景设置。electerm 只会保存插件自己的自动运行条目和表单值。
-- **Stop 能干净移除**：每个窗口的 `insertCSS` key 都会保留，插入操作按窗口排队，不会因为两次并发插入留下删不掉的样式表。
+- **Stop 能干净移除**：样式表属于运行中的实例，停实例、删插件、退出应用都不会留下残留。
 - 一种风格一张图，替换发生在拼装样式表之前：改表单只会读一个文件、重建一次样式表，窗口里不会带着它没在显示的那张图。
 
 ## 许可

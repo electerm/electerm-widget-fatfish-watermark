@@ -14,7 +14,7 @@ no-watermark baseline, across six terminal themes.
 | Shape | instance widget, one switch, two numeric knobs, two artwork styles |
 | Needs | electerm with **Settings → Widgets** |
 | Art | `assets/source-front.png` (original, default) + `assets/fatfish-pixel-art.png` (pixel) |
-| Unit tests | `npm test` — 11 specs, no dependencies, no install |
+| Unit tests | `npm test` — 9 specs, no dependencies, no install |
 | Rebuild art | `npm run build` — no dependencies, no network |
 
 ## Install
@@ -85,20 +85,21 @@ original is the default because it is the actual illustration.
 
 ### It does not fight your own background setting
 
-A widget's UI is a sandboxed iframe and cannot touch the app's DOM; `main.js`
-runs in the main process, so `webContents.insertCSS()` styles electerm's window
-from outside. A second, tiny renderer script reads electerm's own
-`#css-overwrite-terminal-backgrounds` stylesheet and sets two attributes on
-`<html>`: `data-fatfish-style` (chosen in the form) and
-`data-fatfish-watermark`:
+The stylesheet is applied to electerm's own document, and its selectors require
+`<html data-terminal-background="default">` — the attribute electerm sets while
+it paints its built-in wordmark. Your own background image, text, tab index or
+"no background" makes it `custom`, and every rule here stops matching. Plain
+css, no script in the app document.
 
-- built-in default wordmark → `"on"`, our sheet matches;
-- your own background image / text / tab index / "no background" → `"off"`,
-  our sheet stops matching entirely.
+The stylesheet lives with the running instance, so the host re-applies it to
+every window that loads while the widget runs, and removes it on **Stop**.
 
-The switch is a `MutationObserver` on that one `<style>` tag, so changing the
-background setting takes effect immediately. Inserted CSS lives in the current
-document, so every window reload re-inserts it, and later windows are covered.
+### What it needs from the host
+
+`main.js` is a plain node module that reads its own files and calls
+`require('@electerm/widget-api').css.apply(css)`. It does not `require`
+`electron`, so nothing here is desktop-only: the same folder works in
+electerm-web, where the app document belongs to a browser.
 
 ## Artwork
 
@@ -112,9 +113,9 @@ upstream MIT licence.
 - Standalone: it does not read or write the built-in **Settings → Common →
   Custom CSS** setting, nor any terminal-background setting. The only thing
   electerm stores is the widget's own auto-run entry and form values.
-- **Stop removes it properly**: each `insertCSS` key is kept per window and
-  inserts are queued, so two overlapping inserts cannot leave an unremovable
-  stylesheet behind.
+- **Stop removes it properly**: the stylesheet belongs to the running instance,
+  so stopping it, deleting the widget or quitting the app cannot leave one
+  behind.
 - One image per style, chosen before substitution: switching the form re-reads
   one file and rebuilds the sheet, so a window never carries artwork it is not
   showing.

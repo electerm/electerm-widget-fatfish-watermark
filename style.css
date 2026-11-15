@@ -1,5 +1,5 @@
 /*
- * Fatfish terminal watermark — template injected by main.js.
+ * Fatfish terminal watermark — template filled in by main.js.
  *
  * Placeholders (filled in by lib/watermark.js, named FATFISH_*): the PNG data
  * URL, the opacity and the height percent. Do not spell a placeholder out in a
@@ -10,7 +10,7 @@
  * src/client/components/bg/css-overwrite.jsx). The built-in rule paints a white
  * "electerm" wordmark there, which disappears on light themes. The two rules
  * below replace it; which one matches is chosen by the "Artwork style" form.
- * buildCss() keeps only the selected rule, so the injected sheet carries one
+ * buildCss() keeps only the selected rule, so the applied sheet carries one
  * image, never both.
  *
  *   original  the untouched MIT sprite (default). Deep blue hair, white
@@ -20,13 +20,14 @@
  *   color     the 8-colour pixel sprite. Same light-to-dark span, chunkier
  *             pixel-art look.
  *
- * :root[data-fatfish-watermark="on"] is set by a small renderer script only
- * while electerm is showing its built-in default watermark. When the user picks
- * their own background image, text, or "no background", the flag goes off and
- * every rule here stops matching — the widget never fights a user setting.
+ * `:root[data-terminal-background="default"]` is set by electerm itself, in the
+ * same component that paints the layer: "default" is the built-in wordmark,
+ * "custom" anything the user picked (their own image, text, tab index, or
+ * none). So the widget never fights a user setting — and, being plain css, it
+ * needs no script in the app document and no native api.
  */
 /* BEGIN ORIGINAL */
-:root[data-fatfish-watermark="on"][data-fatfish-style="original"] #container .session-batch-active .xterm-screen::before {
+:root[data-terminal-background="default"] #container .session-batch-active .xterm-screen::before {
   background-image: url("__FATFISH_ORIGINAL_IMAGE__") !important;
   background-color: transparent !important;
   background-position: center !important;
@@ -39,7 +40,7 @@
 /* END ORIGINAL */
 
 /* BEGIN COLOR */
-:root[data-fatfish-watermark="on"][data-fatfish-style="color"] #container .session-batch-active .xterm-screen::before {
+:root[data-terminal-background="default"] #container .session-batch-active .xterm-screen::before {
   background-image: url("__FATFISH_COLOR_IMAGE__") !important;
   background-color: transparent !important;
   background-position: center !important;
