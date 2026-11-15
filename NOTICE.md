@@ -17,15 +17,22 @@ upstream repository, not from that theme.
 
 ## Modifications
 
-`assets/fatfish-watermark.png` is a **modified derivative** of the sprite,
-built by `tools/build-watermark.js`: 2× bilinear upscale to 510 × 680,
-luminance Sobel edge detection plus an alpha silhouette edge, a faint body
-fill, neutral-grey (`#8f8f8f`) ink on a transparent background, and alpha
-quantisation to 16 levels. It is a line drawing, not the original coloured
-illustration, and is not presented as the upstream author's work.
+Two files here are **modified derivatives** of the sprite, both built by
+`tools/build-watermark.js`:
 
-The PNG is used by the widget as a CSS alpha mask; its ink colour is replaced at
-runtime by electerm's theme text colour.
+- `assets/fatfish-pixel-art.png` — the sprite reduced to a 51 × 68 grid of
+  solid 10px squares, each snapped to one of eight flat colours (blue hair at
+  three depths, white headdress/apron, ink outline, skin, gold trim), on a
+  transparent background. 510 × 680.
+- `assets/fatfish-watermark.png` — the same grid with every colour mapped to
+  one of six ink levels in neutral grey (`#8f8f8f`) on transparent pixels.
+  510 × 680. It is a shape-only alpha mask, not the original illustration.
+
+Neither is presented as the upstream author's work. The mask is used by the
+widget as a CSS `mask-image`; its ink colour is replaced at runtime by
+electerm's theme text colour. A `--style=line` build option can still produce
+the earlier Sobel line-art look (2× upscale, luminance edge detection, 16-level
+alpha quantisation) for comparison; that output is not shipped.
 
 ## Character and trademark credits
 

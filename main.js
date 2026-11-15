@@ -21,6 +21,7 @@ const path = require('path')
 const { app, webContents } = require('electron')
 const {
   buildCss,
+  normalizeStyle,
   rendererScript
 } = require('./lib/watermark')
 
@@ -28,6 +29,7 @@ const RELOAD = 'did-finish-load'
 const NOOP = () => {}
 const STYLE_FILE = path.join(__dirname, 'style.css')
 const IMAGE_FILE = path.join(__dirname, 'assets', 'fatfish-watermark.png')
+const COLOR_IMAGE_FILE = path.join(__dirname, 'assets', 'fatfish-pixel-art.png')
 
 // devtools and widget iframes are webContents too; the app renderer is served
 // over http://127.0.0.1:<port>, so skipping the widget/devtools schemes is
@@ -35,6 +37,7 @@ const IMAGE_FILE = path.join(__dirname, 'assets', 'fatfish-watermark.png')
 const SKIP_SCHEME = /^(devtools|electerm-widget|chrome|chrome-extension|about|data):/i
 
 let currentCss = ''
+let currentStyle = 'color'
 const applied = new Map() // webContents.id -> { wc, onLoad, key, queue }
 let onCreated = null
 
@@ -87,7 +90,7 @@ async function install (wc) {
     return
   }
   try {
-    await wc.executeJavaScript(rendererScript())
+    await wc.executeJavaScript(rendererScript(currentStyle))
   } catch (e) {
     // the document may not be ready yet; the reload handler retries
   }
@@ -151,14 +154,17 @@ function widgetRun (instanceConfig = {}, ctx = {}) {
   function readFiles () {
     const template = fs.readFileSync(STYLE_FILE, 'utf8')
     const png = fs.readFileSync(IMAGE_FILE)
+    const colorPng = fs.readFileSync(COLOR_IMAGE_FILE)
     const dataUrl = `data:image/png;base64,${png.toString('base64')}`
+    const colorDataUrl = `data:image/png;base64,${colorPng.toString('base64')}`
     return {
       css: buildCss(template, {
         dataUrl,
+        colorDataUrl,
         opacity: config.opacity,
         size: config.size
       }),
-      imageBytes: png.length
+      imageBytes: png.length + colorPng.length
     }
   }
 
@@ -171,6 +177,7 @@ function widgetRun (instanceConfig = {}, ctx = {}) {
       }
       const { css, imageBytes } = readFiles()
       currentCss = css
+      currentStyle = normalizeStyle(config.style)
       started = true
       onCreated = (event, wc) => {
         if (isAppWindow(wc)) {
@@ -183,7 +190,7 @@ function widgetRun (instanceConfig = {}, ctx = {}) {
       // issued right after this both describe the same state
       await Promise.all([...applied.values()].map(entry => entry.queue.catch(NOOP)))
 
-      log('info', `applied to ${applied.size} window(s), ${sizeLabel(imageBytes)} watermark`)
+      log('info', `applied ${currentStyle} style to ${applied.size} window(s), ${sizeLabel(imageBytes)} artwork`)
       return {
         msg: `Fatfish watermark applied to ${applied.size} window(s)`
       }

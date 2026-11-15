@@ -1,8 +1,8 @@
 {
   "name": "fatfish-watermark",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "Replace electerm's default terminal watermark with a theme-aware 大肥鱼 (DeepSeek whale-girl) line-art watermark.",
+  "description": "Replace electerm's default terminal watermark with a pixel-art 大肥鱼 (DeepSeek whale-girl).",
   "main": "main.js",
   "license": "MIT",
   "author": "ZHAO Xudong",
@@ -14,18 +14,35 @@
   "electerm": {
     "id": "fatfish-watermark",
     "name": "Fatfish Terminal Watermark",
-    "description": "Replace the default electerm watermark with a 大肥鱼 / DeepSeek whale-girl line drawing that follows your theme's text colour, so it stays visible on dark, light and coloured backgrounds.",
-    "version": "1.0.0",
+    "description": "Replace the default electerm watermark with a pixel-art 大肥鱼 / DeepSeek whale-girl. Colour pixel art or a theme-colour mask that adapts to any background.",
+    "version": "1.1.0",
     "type": "instance",
     "singleInstance": true,
     "persist": true,
     "configs": [
       {
+        "name": "style",
+        "label": "Artwork style",
+        "type": "select",
+        "default": "color",
+        "description": "Colour pixel art is cuter and visible on light/dark/coloured themes; the theme-colour mask paints the same pixels with --text for strict theme matching.",
+        "choices": [
+          {
+            "label": "Colour pixel art",
+            "value": "color"
+          },
+          {
+            "label": "Theme-colour mask",
+            "value": "mono"
+          }
+        ]
+      },
+      {
         "name": "opacity",
         "label": "Opacity (%)",
         "type": "number",
         "default": 20,
-        "description": "How strong the watermark is, in percent. Clamped to 5–60. The default, 20, is about as subtle as electerm's built-in wordmark."
+        "description": "How strong the watermark is, in percent. Clamped to 5–60. The colour style is drawn a little stronger (1.4x) than the mask style."
       },
       {
         "name": "size",

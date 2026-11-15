@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Fatfish watermark — background colour check</title>
+<title>Fatfish pixel watermark — background colour check</title>
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -12,8 +12,8 @@
     color: #222; background: #f4f5f7;
   }
   h1 { font-size: 19px; margin: 0 0 4px; }
-  p.intro { margin: 0 0 18px; color: #666; max-width: 760px; }
-  .bar { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; }
+  p.intro { margin: 0 0 18px; color: #666; max-width: 780px; }
+  .bar { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
   button {
     font: inherit; padding: 5px 12px; border: 1px solid #c9ccd1; border-radius: 6px;
     background: #fff; color: #222; cursor: pointer;
@@ -31,9 +31,18 @@
   .screen .muted { opacity: .62; }
   .screen .prompt { color: var(--accent); }
 
-  /* exactly what the widget injects: a shape-only mask painted with --text */
+  /* default: the 8-colour pixel sprite, exactly what the widget injects */
   .screen::before {
     content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image: url("assets/fatfish-pixel-art.png");
+    background-color: transparent;
+    background-size: auto 82%;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: .28;
+  }
+  /* alternative: the same pixels as a shape-only mask painted with --text */
+  .screen.mono::before {
     background-image: none;
     background-color: var(--text);
     -webkit-mask-image: url("assets/fatfish-watermark.png");
@@ -44,37 +53,53 @@
     mask-mode: alpha;
     opacity: .20;
   }
-  /* comparison: the same PNG used straight as an image */
+  /* comparison: the mono PNG used straight as an image */
   .screen.plain::before {
-    background-color: transparent;
     background-image: url("assets/fatfish-watermark.png");
+    background-color: transparent;
     background-size: auto 82%;
-    background-position: center;
-    background-repeat: no-repeat;
     -webkit-mask-image: none; mask-image: none;
     opacity: .38;
   }
   .screen.clean::before { display: none; }
   .swatch { display: inline-block; width: 9px; height: 9px; border-radius: 2px;
             border: 1px solid rgba(0,0,0,.18); margin-right: 5px; vertical-align: -1px; }
-  footer { margin-top: 22px; font-size: 12px; color: #777; max-width: 760px; }
+  .steps { display: flex; gap: 22px; align-items: flex-start; margin-top: 26px;
+           padding: 14px 16px; border: 1px solid #dfe1e5; border-radius: 8px;
+           background: #fff; max-width: 1120px; }
+  .steps img { width: 122px; height: auto; image-rendering: pixelated;
+               border: 1px solid #e6e8eb; border-radius: 4px; background: #222; }
+  .steps p { margin: 0; font-size: 12px; color: #555; max-width: 660px; }
+  .steps b { color: #222; }
+  footer { margin-top: 20px; font-size: 12px; color: #777; max-width: 780px; }
   code { background: #e9ebee; padding: 1px 4px; border-radius: 3px; }
 </style>
 </head>
 <body>
-<h1>Fatfish terminal watermark</h1>
-<p class="intro">The widget paints the watermark with electerm's <code>--text</code> colour through
-an alpha mask, so it stays visible and low-contrast on every theme. Toggle below to compare with
-using the PNG directly, or hide the watermark entirely.</p>
+<h1>Fatfish pixel watermark</h1>
+<p class="intro">The sprite is pixelated first, then turned into a watermark. Toggle below to
+compare the two widget styles with using the PNG directly, or hide the watermark entirely.
+Every tile is a mock terminal on a different theme.</p>
 <div class="bar">
-  <button id="mask" class="on">Widget: theme colour</button>
-  <button id="plain">PNG as image</button>
+  <button id="color" class="on">Colour pixel art</button>
+  <button id="mono">Theme-colour mask</button>
+  <button id="plain">Mono PNG as image</button>
   <button id="clean">No watermark</button>
 </div>
 <div class="grid" id="grid"></div>
-<footer>Artwork: MIT-licensed “大肥鱼 / 鲸鱼娘” chibi sprite by
+<div class="steps">
+  <img src="assets/fatfish-pixel-art.png" alt="8-colour pixel-art whale-girl">
+  <p><b>Step 1 — pixelate.</b> The MIT-licensed chibi sprite is reduced to a 51 × 68 grid
+  of flat 10px blocks and quantised to eight colours: deep blue hair, bright blue tips,
+  white headdress and apron, ink outlines, skin, gold trim.<br>
+  <b>Step 2 — watermark.</b> Each colour maps to one of six ink levels in a neutral-grey
+  alpha mask. The widget can show the colour sprite itself, or paint the mask with
+  electerm's <code>--text</code> colour so it follows the theme exactly.</p>
+</div>
+<footer>Artwork: MIT-licensed 「大肥鱼 / 鲸鱼娘」 chibi sprite by
 <a href="https://github.com/1190fasheqi/dafeiyu-pet">1190fasheqi/dafeiyu-pet</a>,
-converted to a line-art alpha mask. Unofficial fan art; not affiliated with DeepSeek.</footer>
+pixelated and recoloured here. Unofficial fan art; not affiliated with DeepSeek.
+See <a href="NOTICE.md">NOTICE.md</a>.</footer>
 <script>
   const themes = [
     { name: 'electerm default dark', main: '#141314', text: '#dddddd', accent: '#7ee787' },
@@ -86,9 +111,9 @@ converted to a line-art alpha mask. Unofficial fan art; not affiliated with Deep
   ]
   const lines = [
     '<span class="prompt">~</span> ssh dev@example.com',
-    'Last login: Sun Nov 15 07:41:59 2026',
+    'Last login: Sun Nov 15 10:00:16 2026',
     '<span class="prompt">~</span> ls -la',
-    'total 12   drwxr-xr-x  4 zxd  staff  128 Nov 15 07:42 .',
+    'total 12   drwxr-xr-x  4 zxd  staff  128 Nov 15 09:58 .',
     '           -rw-r--r--  1 zxd  staff  842 Nov 14 22:10 notes.md',
     '<span class="prompt">~</span> <span class="muted"># the watermark sits behind the text</span>',
     '<span class="prompt">~</span> '
@@ -105,12 +130,13 @@ converted to a line-art alpha mask. Unofficial fan art; not affiliated with Deep
   function setMode (mode) {
     buttons.forEach(b => b.classList.toggle('on', b.id === mode))
     document.querySelectorAll('.screen').forEach(s => {
+      s.classList.toggle('mono', mode === 'mono')
       s.classList.toggle('plain', mode === 'plain')
       s.classList.toggle('clean', mode === 'clean')
     })
   }
   buttons.forEach(b => b.addEventListener('click', () => setMode(b.id)))
-  if (location.hash === '#plain' || location.hash === '#clean') setMode(location.hash.slice(1))
+  if (['mono', 'plain', 'clean'].includes(location.hash.slice(1))) setMode(location.hash.slice(1))
 </script>
 </body>
 </html>
