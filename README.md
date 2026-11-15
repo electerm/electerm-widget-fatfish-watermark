@@ -19,7 +19,11 @@ no-watermark baseline, across six terminal themes.
 
 ## Install
 
-**Settings → Widgets → Import**, then paste:
+In electerm, open **Settings → Widgets → Online** and install *Fatfish Terminal
+Watermark* from the list. The registry pins one commit and the app verifies the
+hash of every file before copying anything.
+
+Alternatively, **Settings → Widgets → Import** and paste:
 
 ```text
 electerm/electerm-widget-fatfish-watermark

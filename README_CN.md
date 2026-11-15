@@ -16,13 +16,16 @@
 
 ## 安装
 
-**设置 → Widgets → Import**，粘贴：
+在 electerm 里打开 **设置 → Widgets → Online**，在列表里安装 *Fatfish Terminal
+Watermark*。注册表固定了某个 commit，应用会在复制前逐个文件校验哈希。
+
+也可以用 **设置 → Widgets → Import** 粘贴：
 
 ```text
 electerm/electerm-widget-fatfish-watermark
 ```
 
-也可以用 **Import folder** 指向本地克隆。
+或用 **Import folder** 指向本地克隆。
 
 ## 使用
 
