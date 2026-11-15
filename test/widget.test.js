@@ -1,6 +1,6 @@
 /**
- * Manifest, stylesheet, pixel artwork and the renderer switch, checked
- * without an Electron runtime. Run: npm test
+ * Manifest, stylesheet, pixel artwork and the host api calls, checked without
+ * an Electron runtime (and without a host). Run: npm test
  */
 
 const test = require('node:test')
@@ -14,12 +14,9 @@ const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
 const style = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8')
 const mainSrc = fs.readFileSync(path.join(ROOT, 'main.js'), 'utf8')
 const {
-  APP_STYLE_TAG,
   buildCss,
   clamp,
-  normalizeStyle,
-  rendererScript,
-  shouldApplyWatermark
+  normalizeStyle
 } = require(path.join(ROOT, 'lib', 'watermark'))
 const {
   pixelate,
@@ -27,9 +24,6 @@ const {
 } = require(path.join(ROOT, 'tools', 'build-watermark'))
 
 const PNG_URL = 'data:image/png;base64,AAAA'
-const DEFAULT_SHEET = '#container .session-batch-active .xterm-screen::before {' +
-  'background-image: url("./images/electerm-watermark.png");' +
-  'background-size: min(100%, 766px) auto;}'
 
 test('the id is what the widget folder is called', () => {
   assert.strictEqual(pkg.electerm.id, 'fatfish-watermark')
@@ -53,20 +47,31 @@ test('it is an auto-runnable instance widget with style and two knobs', () => {
   assert.strictEqual(configs[3].default, true)
 })
 
-test('main.js parses and uses the main-process injection points', () => {
+test('main.js is plain node plus the widget api — no electron at all', () => {
   new vm.Script(mainSrc, { filename: 'main.js' })
-  assert.match(mainSrc, /webContents\.insertCSS/)
-  assert.match(mainSrc, /webContents\.executeJavaScript/)
-  assert.match(mainSrc, /removeInsertedCSS/)
+  // the stylesheet, not the DOM: the host applies it and takes it off again
+  assert.match(mainSrc, /css\.apply\(css\)/)
+  assert.match(mainSrc, /css\.remove\(\)/)
+  assert.doesNotMatch(mainSrc, /require\('electron'\)/)
+  assert.doesNotMatch(mainSrc, /webContents|insertCSS|executeJavaScript/)
   assert.match(mainSrc, /fatfish-pixel-art\.png/)
   assert.match(mainSrc, /source-front\.png/)
-  // the default artwork is the untouched sprite, not the pixel version
-  assert.match(mainSrc, /let currentStyle = 'original'/)
+  // resolved inside widgetRun: the host writes the api module before the entry
+  // is loaded, so a module-level require would break `npm test`
+  assert.doesNotMatch(mainSrc, /^const .* = require\('@electerm\/widget-api'\)$/m)
+  assert.match(mainSrc, /require\('@electerm\/widget-api'\)/)
 })
 
 test('style.css has one fenced rule per artwork style and nothing else', () => {
-  assert.match(style, /\[data-fatfish-watermark="on"\]\[data-fatfish-style="original"\]/)
-  assert.match(style, /\[data-fatfish-watermark="on"\]\[data-fatfish-style="color"\]/)
+  // The switch is electerm's own attribute, set by the component that paints
+  // the terminal background: "default" is the built-in wordmark, "custom" is
+  // anything the user picked, and these rules only apply to the former.
+  assert.match(style, /:root\[data-terminal-background="default"\]/)
+  assert.doesNotMatch(style, /data-fatfish-/)
+  assert.strictEqual(
+    (style.match(/^:root\[data-terminal-background="default"\]/gm) || []).length,
+    2
+  )
   assert.match(style, /background-image: url\("__FATFISH_ORIGINAL_IMAGE__"\) !important/)
   assert.match(style, /background-image: url\("__FATFISH_COLOR_IMAGE__"\) !important/)
   // no masks anywhere: both artworks are full-colour, so a theme-colour mask
@@ -92,16 +97,20 @@ test('buildCss fills the placeholders and keeps only the selected rule', () => {
   // substituted, so a 152KB sprite never rides along with the pixel sprite
   assert.strictEqual((css.match(/data:image\/png;base64/g) || []).length, 1)
   assert.doesNotMatch(css, /BEGIN COLOR|END COLOR/)
-  assert.doesNotMatch(css, /data-fatfish-style="color"/)
-  assert.match(css, /\[data-fatfish-style="original"\]/)
+  assert.strictEqual(
+    (css.match(/^:root\[data-terminal-background="default"\]/gm) || []).length,
+    1
+  )
   assert.match(css, /background-size: auto min\(78%, 340px\) !important;/)
   assert.match(css, /opacity: 0\.28;/) // 20 x 1.4, so the sprite reads as strongly as the old mask
 
   const pixel = buildCss(style, { style: 'color', imageDataUrl: PNG_URL, opacity: 20, size: 78 })
   assert.strictEqual((pixel.match(/data:image\/png;base64/g) || []).length, 1)
   assert.doesNotMatch(pixel, /BEGIN ORIGINAL|END ORIGINAL/)
-  assert.doesNotMatch(pixel, /data-fatfish-style="original"/)
-  assert.match(pixel, /\[data-fatfish-style="color"\]/)
+  assert.strictEqual(
+    (pixel.match(/^:root\[data-terminal-background="default"\]/gm) || []).length,
+    1
+  )
   assert.match(pixel, /background-size: auto 78% !important;/)
   // no height cap on the pixel grid — it is generated at 510x680, so upscaling
   // it is the whole point of a chunkier look
@@ -126,77 +135,6 @@ test('buildCss clamps the knobs and rejects a non-PNG image', () => {
   assert.strictEqual(normalizeStyle('original'), 'original')
   assert.strictEqual(normalizeStyle('mono'), 'original') // removed style falls back to the default
   assert.strictEqual(normalizeStyle(undefined), 'original')
-})
-
-test('the renderer switch only turns on for the built-in default watermark', () => {
-  assert.strictEqual(shouldApplyWatermark(''), true)
-  assert.strictEqual(shouldApplyWatermark(null), true)
-  assert.strictEqual(shouldApplyWatermark(DEFAULT_SHEET), true)
-  assert.strictEqual(shouldApplyWatermark(DEFAULT_SHEET + '\n' +
-    '#container .sessions .session-abc .xterm-screen::before {background-image: url("./images/electerm-watermark.png");}'), true)
-
-  assert.strictEqual(shouldApplyWatermark(
-    '#container .session-batch-active .xterm-screen::before {background-image: none;}'), false)
-  assert.strictEqual(shouldApplyWatermark(
-    '#container .session-batch-active .xterm-screen::before {background-image: url(data:image;base64,AAAA);}'), false)
-  assert.strictEqual(shouldApplyWatermark(
-    '#container .session-batch-active .xterm-screen::before {background-image: url(https://x/y.jpg);}'), false)
-  assert.strictEqual(shouldApplyWatermark(
-    "#container .session-batch-active .xterm-screen::before {content: 'hello';}"), false)
-  assert.strictEqual(shouldApplyWatermark(DEFAULT_SHEET + '\n' +
-    '#container .sessions .session-abc .xterm-screen::before {background-image: none;}'), false)
-})
-
-function runRenderer (script) {
-  const tag = { id: APP_STYLE_TAG, textContent: DEFAULT_SHEET }
-  const root = { dataset: {} }
-  let observer
-  const sandbox = {
-    document: {
-      documentElement: root,
-      head: {},
-      getElementById: id => (id === tag.id ? tag : null)
-    },
-    window: {},
-    MutationObserver: class {
-      constructor (cb) {
-        this.cb = cb
-        observer = this
-      }
-
-      observe () {}
-      disconnect () {}
-    }
-  }
-  vm.runInNewContext(script, sandbox)
-  return { tag, root, sandbox, fire: () => observer.cb() }
-}
-
-test('the renderer script sets the chosen style and reacts to style-tag rewrites', () => {
-  const script = rendererScript()
-  assert.ok(script.includes(APP_STYLE_TAG))
-  assert.ok(script.includes('shouldApplyWatermark'))
-  assert.ok(script.includes('"original"'))
-  assert.doesNotMatch(script, /require\(|module\.exports/)
-
-  const { tag, root, sandbox, fire } = runRenderer(script)
-  assert.strictEqual(root.dataset.fatfishWatermark, 'on')
-  assert.strictEqual(root.dataset.fatfishStyle, 'original')
-
-  tag.textContent = '#container .session-batch-active .xterm-screen::before {background-image: none;}'
-  fire()
-  assert.strictEqual(root.dataset.fatfishWatermark, 'off')
-  assert.strictEqual(root.dataset.fatfishStyle, 'original')
-
-  tag.textContent = DEFAULT_SHEET
-  fire()
-  assert.strictEqual(root.dataset.fatfishWatermark, 'on')
-
-  sandbox.window.__fatfishWatermark.stop()
-  assert.strictEqual('fatfishWatermark' in root.dataset, false)
-  assert.strictEqual('fatfishStyle' in root.dataset, false)
-  assert.strictEqual(sandbox.window.__fatfishWatermark, undefined)
-  assert.ok(rendererScript('color').includes('"color"'))
 })
 
 test('the pixel art is a transparent, eight-colour, solid-square sprite', () => {
