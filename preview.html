@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Fatfish pixel watermark — background colour check</title>
+<title>Fatfish watermark — background colour check</title>
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -27,39 +27,32 @@
     background: var(--main); color: var(--text);
     font: 12px/1.65 "SFMono-Regular", Menlo, Consolas, monospace;
   }
-  .screen .lines { position: relative; z-index: 1; padding: 12px 14px; }
+  .screen .lines { position: relative; z-index: 1; padding: 12px 14px; white-space: pre-wrap; }
   .screen .muted { opacity: .62; }
   .screen .prompt { color: var(--accent); }
 
-  /* default: the 8-colour pixel sprite, exactly what the widget injects */
+  /* default: the untouched source sprite, exactly what the widget injects.
+     The cap at 340px is the sprite's own height, so a tall pane never
+     upscales the bitmap into a blur. */
   .screen::before {
     content: ''; position: absolute; inset: 0; pointer-events: none;
-    background-image: url("assets/fatfish-pixel-art.png");
+    background-image: url("assets/source-front.png");
     background-color: transparent;
-    background-size: auto 82%;
+    background-size: auto min(78%, 340px);
     background-position: center;
     background-repeat: no-repeat;
+    -webkit-mask-image: none; mask-image: none;
     opacity: .28;
   }
-  /* alternative: the same pixels as a shape-only mask painted with --text */
-  .screen.mono::before {
-    background-image: none;
-    background-color: var(--text);
-    -webkit-mask-image: url("assets/fatfish-watermark.png");
-    mask-image: url("assets/fatfish-watermark.png");
-    -webkit-mask-size: auto 82%; mask-size: auto 82%;
-    -webkit-mask-position: center; mask-position: center;
-    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
-    mask-mode: alpha;
-    opacity: .20;
-  }
-  /* comparison: the mono PNG used straight as an image */
-  .screen.plain::before {
-    background-image: url("assets/fatfish-watermark.png");
+  /* second style: the same character as an 8-colour pixel grid */
+  .screen.color::before {
+    background-image: url("assets/fatfish-pixel-art.png");
     background-color: transparent;
-    background-size: auto 82%;
+    background-size: auto 78%;
+    background-position: center;
+    background-repeat: no-repeat;
     -webkit-mask-image: none; mask-image: none;
-    opacity: .38;
+    opacity: .28;
   }
   .screen.clean::before { display: none; }
   .swatch { display: inline-block; width: 9px; height: 9px; border-radius: 2px;
@@ -76,29 +69,34 @@
 </style>
 </head>
 <body>
-<h1>Fatfish pixel watermark</h1>
-<p class="intro">The sprite is pixelated first, then turned into a watermark. Toggle below to
-compare the two widget styles with using the PNG directly, or hide the watermark entirely.
-Every tile is a mock terminal on a different theme.</p>
+<h1>Fatfish watermark</h1>
+<p class="intro">Two artwork styles, both drawn at the widget's default 20% opacity and 78%
+height. <b>Original PNG</b> is the default: the untouched MIT sprite, which already spans white
+headdress to near-black outline, so it stays readable on dark, light and coloured themes.
+<b>Colour pixel art</b> is the same character reduced to an 8-colour grid. Every tile is a mock
+terminal on a different theme.</p>
 <div class="bar">
-  <button id="color" class="on">Colour pixel art</button>
-  <button id="mono">Theme-colour mask</button>
-  <button id="plain">Mono PNG as image</button>
+  <button id="original" class="on">Original PNG</button>
+  <button id="color">Colour pixel art</button>
   <button id="clean">No watermark</button>
 </div>
 <div class="grid" id="grid"></div>
 <div class="steps">
-  <img src="assets/fatfish-pixel-art.png" alt="8-colour pixel-art whale-girl">
-  <p><b>Step 1 — pixelate.</b> The MIT-licensed chibi sprite is reduced to a 51 × 68 grid
-  of flat 10px blocks and quantised to eight colours: deep blue hair, bright blue tips,
-  white headdress and apron, ink outlines, skin, gold trim.<br>
-  <b>Step 2 — watermark.</b> Each colour maps to one of six ink levels in a neutral-grey
-  alpha mask. The widget can show the colour sprite itself, or paint the mask with
-  electerm's <code>--text</code> colour so it follows the theme exactly.</p>
+  <img src="assets/source-front.png" alt="MIT-licensed 大肥鱼 chibi sprite">
+  <img src="assets/fatfish-pixel-art.png" alt="8-colour pixel-art version">
+  <p><b>Source.</b> The MIT-licensed chibi sprite is shipped untouched as
+  <code>assets/source-front.png</code> (255 × 340).<br>
+  <b>Pixel version.</b> <code>npm run build</code> reduces it to a 51 × 68 grid of flat 10px
+  blocks quantised to eight colours — deep blue hair, bright blue tips, white headdress and
+  apron, ink outlines, skin, gold trim — and writes <code>assets/fatfish-pixel-art.png</code>
+  (510 × 680).<br>
+  <b>Injection.</b> The chosen PNG is inlined as a data URL into one rule in
+  <code>style.css</code>; the other rule is stripped out, so a window only ever carries the
+  image it is actually showing.</p>
 </div>
 <footer>Artwork: MIT-licensed 「大肥鱼 / 鲸鱼娘」 chibi sprite by
 <a href="https://github.com/1190fasheqi/dafeiyu-pet">1190fasheqi/dafeiyu-pet</a>,
-pixelated and recoloured here. Unofficial fan art; not affiliated with DeepSeek.
+recoloured here for the pixel style. Unofficial fan art; not affiliated with DeepSeek.
 See <a href="NOTICE.md">NOTICE.md</a>.</footer>
 <script>
   const themes = [
@@ -130,13 +128,12 @@ See <a href="NOTICE.md">NOTICE.md</a>.</footer>
   function setMode (mode) {
     buttons.forEach(b => b.classList.toggle('on', b.id === mode))
     document.querySelectorAll('.screen').forEach(s => {
-      s.classList.toggle('mono', mode === 'mono')
-      s.classList.toggle('plain', mode === 'plain')
+      s.classList.toggle('color', mode === 'color')
       s.classList.toggle('clean', mode === 'clean')
     })
   }
   buttons.forEach(b => b.addEventListener('click', () => setMode(b.id)))
-  if (['mono', 'plain', 'clean'].includes(location.hash.slice(1))) setMode(location.hash.slice(1))
+  if (['color', 'clean'].includes(location.hash.slice(1))) setMode(location.hash.slice(1))
 </script>
 </body>
 </html>

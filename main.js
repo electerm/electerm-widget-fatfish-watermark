@@ -1,8 +1,9 @@
 /**
  * Fatfish Terminal Watermark
  *
- * Replaces electerm's built-in white "electerm" wordmark with a line-art
- * 大肥鱼 / DeepSeek whale-girl watermark that follows the theme's text colour.
+ * Replaces electerm's built-in white "electerm" wordmark with a 大肥鱼 /
+ * DeepSeek whale-girl watermark: the original MIT sprite by default, or an
+ * 8-colour pixel version of it.
  *
  * A widget's UI is a sandboxed iframe and cannot touch the app's DOM, but its
  * main.js runs in the main process. This file therefore uses
@@ -28,8 +29,8 @@ const {
 const RELOAD = 'did-finish-load'
 const NOOP = () => {}
 const STYLE_FILE = path.join(__dirname, 'style.css')
-const IMAGE_FILE = path.join(__dirname, 'assets', 'fatfish-watermark.png')
 const COLOR_IMAGE_FILE = path.join(__dirname, 'assets', 'fatfish-pixel-art.png')
+const ORIGINAL_IMAGE_FILE = path.join(__dirname, 'assets', 'source-front.png')
 
 // devtools and widget iframes are webContents too; the app renderer is served
 // over http://127.0.0.1:<port>, so skipping the widget/devtools schemes is
@@ -37,7 +38,7 @@ const COLOR_IMAGE_FILE = path.join(__dirname, 'assets', 'fatfish-pixel-art.png')
 const SKIP_SCHEME = /^(devtools|electerm-widget|chrome|chrome-extension|about|data):/i
 
 let currentCss = ''
-let currentStyle = 'color'
+let currentStyle = 'original'
 const applied = new Map() // webContents.id -> { wc, onLoad, key, queue }
 let onCreated = null
 
@@ -152,19 +153,20 @@ function widgetRun (instanceConfig = {}, ctx = {}) {
   let started = false
 
   function readFiles () {
+    const style = normalizeStyle(config.style)
     const template = fs.readFileSync(STYLE_FILE, 'utf8')
-    const png = fs.readFileSync(IMAGE_FILE)
-    const colorPng = fs.readFileSync(COLOR_IMAGE_FILE)
-    const dataUrl = `data:image/png;base64,${png.toString('base64')}`
-    const colorDataUrl = `data:image/png;base64,${colorPng.toString('base64')}`
+    // one image per style: the source sprite is 152KB, the pixel sprite 8KB
+    const imageFile = style === 'original' ? ORIGINAL_IMAGE_FILE : COLOR_IMAGE_FILE
+    const png = fs.readFileSync(imageFile)
     return {
+      style,
       css: buildCss(template, {
-        dataUrl,
-        colorDataUrl,
+        style,
+        imageDataUrl: `data:image/png;base64,${png.toString('base64')}`,
         opacity: config.opacity,
         size: config.size
       }),
-      imageBytes: png.length + colorPng.length
+      imageBytes: png.length
     }
   }
 
@@ -175,9 +177,9 @@ function widgetRun (instanceConfig = {}, ctx = {}) {
       if (started) {
         throw new Error('This watermark is already applied')
       }
-      const { css, imageBytes } = readFiles()
+      const { css, imageBytes, style } = readFiles()
       currentCss = css
-      currentStyle = normalizeStyle(config.style)
+      currentStyle = style
       started = true
       onCreated = (event, wc) => {
         if (isAppWindow(wc)) {

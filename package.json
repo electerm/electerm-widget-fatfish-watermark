@@ -1,8 +1,8 @@
 {
   "name": "fatfish-watermark",
-  "version": "1.1.0",
+  "version": "1.3.0",
   "private": true,
-  "description": "Replace electerm's default terminal watermark with a pixel-art 大肥鱼 (DeepSeek whale-girl).",
+  "description": "Replace electerm's default terminal watermark with the original 大肥鱼 (DeepSeek whale-girl) sprite, or its 8-colour pixel version.",
   "main": "main.js",
   "license": "MIT",
   "author": "ZHAO Xudong",
@@ -14,8 +14,8 @@
   "electerm": {
     "id": "fatfish-watermark",
     "name": "Fatfish Terminal Watermark",
-    "description": "Replace the default electerm watermark with a pixel-art 大肥鱼 / DeepSeek whale-girl. Colour pixel art or a theme-colour mask that adapts to any background.",
-    "version": "1.1.0",
+    "description": "Replace the default electerm watermark with the original 大肥鱼 / DeepSeek whale-girl sprite, or its 8-colour pixel version.",
+    "version": "1.3.0",
     "type": "instance",
     "singleInstance": true,
     "persist": true,
@@ -24,16 +24,16 @@
         "name": "style",
         "label": "Artwork style",
         "type": "select",
-        "default": "color",
-        "description": "Colour pixel art is cuter and visible on light/dark/coloured themes; the theme-colour mask paints the same pixels with --text for strict theme matching.",
+        "default": "original",
+        "description": "Original PNG is the untouched MIT sprite (default); Colour pixel art is the same character reduced to an 8-colour pixel grid.",
         "choices": [
+          {
+            "label": "Original PNG",
+            "value": "original"
+          },
           {
             "label": "Colour pixel art",
             "value": "color"
-          },
-          {
-            "label": "Theme-colour mask",
-            "value": "mono"
           }
         ]
       },
@@ -42,7 +42,7 @@
         "label": "Opacity (%)",
         "type": "number",
         "default": 20,
-        "description": "How strong the watermark is, in percent. Clamped to 5–60. The colour style is drawn a little stronger (1.4x) than the mask style."
+        "description": "How strong the watermark is, in percent. Clamped to 5–60; the sprite is drawn at 1.4x this value, which matches the visual weight of the old wordmark."
       },
       {
         "name": "size",

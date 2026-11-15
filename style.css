@@ -1,28 +1,44 @@
 /*
  * Fatfish terminal watermark — template injected by main.js.
  *
- * Placeholders (filled in by lib/watermark.js, named FATFISH_*):
- *   the two PNG data URLs, the two opacity values and the height percent.
- *   Do not spell a placeholder out in a comment — the builder replaces every
- *   occurrence, and a 100KB data URL in a comment would bloat the sheet.
+ * Placeholders (filled in by lib/watermark.js, named FATFISH_*): the PNG data
+ * URL, the opacity and the height percent. Do not spell a placeholder out in a
+ * comment — the builder replaces every occurrence, and a 200KB data URL in a
+ * comment would bloat the sheet.
  *
  * The ::before layer is electerm's own terminal-background layer (see
  * src/client/components/bg/css-overwrite.jsx). The built-in rule paints a white
- * "electerm" wordmark there, which disappears on light themes. Both styles here
- * replace it; which one matches is chosen by the widget's "Artwork style" form.
+ * "electerm" wordmark there, which disappears on light themes. The two rules
+ * below replace it; which one matches is chosen by the "Artwork style" form.
+ * buildCss() keeps only the selected rule, so the injected sheet carries one
+ * image, never both.
  *
- *   colour  the 8-colour pixel sprite itself. Its ink spans white headdress /
- *           apron to near-black outlines, so part of it always contrasts with
- *           a dark, light or coloured terminal background.
- *   mono    the same pixels as a shape-only alpha mask, painted with the
- *           theme's --text colour. Strictly follows the theme; text colour
- *           always contrasts with the terminal background.
+ *   original  the untouched MIT sprite (default). Deep blue hair, white
+ *             headdress and apron: enough light-to-dark span to read on dark,
+ *             light and coloured backgrounds. Capped at its own 340px height so
+ *             a tall window never upscales the bitmap into a blur.
+ *   color     the 8-colour pixel sprite. Same light-to-dark span, chunkier
+ *             pixel-art look.
  *
  * :root[data-fatfish-watermark="on"] is set by a small renderer script only
  * while electerm is showing its built-in default watermark. When the user picks
  * their own background image, text, or "no background", the flag goes off and
  * every rule here stops matching — the widget never fights a user setting.
  */
+/* BEGIN ORIGINAL */
+:root[data-fatfish-watermark="on"][data-fatfish-style="original"] #container .session-batch-active .xterm-screen::before {
+  background-image: url("__FATFISH_ORIGINAL_IMAGE__") !important;
+  background-color: transparent !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: auto min(__FATFISH_SIZE__%, 340px) !important;
+  -webkit-mask-image: none;
+  mask-image: none;
+  opacity: __FATFISH_OPACITY__;
+}
+/* END ORIGINAL */
+
+/* BEGIN COLOR */
 :root[data-fatfish-watermark="on"][data-fatfish-style="color"] #container .session-batch-active .xterm-screen::before {
   background-image: url("__FATFISH_COLOR_IMAGE__") !important;
   background-color: transparent !important;
@@ -31,23 +47,6 @@
   background-size: auto __FATFISH_SIZE__% !important;
   -webkit-mask-image: none;
   mask-image: none;
-  opacity: __FATFISH_COLOR_OPACITY__;
-}
-
-:root[data-fatfish-watermark="on"][data-fatfish-style="mono"] #container .session-batch-active .xterm-screen::before {
-  background-image: none !important;
-  background-color: var(--text, #dddddd) !important;
-  background-position: center !important;
-  --fatfish-image: url("__FATFISH_IMAGE__");
-  -webkit-mask-image: var(--fatfish-image);
-  mask-image: var(--fatfish-image);
-  -webkit-mask-source-type: alpha;
-  mask-mode: alpha;
-  -webkit-mask-size: auto __FATFISH_SIZE__%;
-  mask-size: auto __FATFISH_SIZE__%;
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
   opacity: __FATFISH_OPACITY__;
 }
+/* END COLOR */
