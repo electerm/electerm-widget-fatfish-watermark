@@ -1,0 +1,37 @@
+/*
+ * Fatfish terminal watermark — template injected by main.js.
+ *
+ * The image placeholder becomes a data: URL of assets/fatfish-watermark.png.
+ * It is declared once as --fatfish-image and both mask properties read it, so
+ * the ~100KB data URL is not duplicated in the injected sheet. Opacity and
+ * size come from the widget's config form.
+ *
+ * The ::before layer is electerm's own terminal-background layer (see
+ * src/client/components/bg/css-overwrite.jsx). The built-in rule paints a white
+ * "electerm" wordmark there, which disappears on light themes. We replace it
+ * with a shape-only alpha mask and paint that mask with the theme's --text
+ * colour: text colour always contrasts with the terminal background, so the
+ * watermark does too, on dark, light and coloured themes alike.
+ *
+ * :root[data-fatfish-watermark="on"] is set by a small renderer script only
+ * while electerm is showing its built-in default watermark. When the user picks
+ * their own background image, text, or "no background", the flag goes off and
+ * every rule here stops matching — the widget never fights a user setting.
+ */
+:root[data-fatfish-watermark="on"] #container .session-batch-active .xterm-screen::before {
+  background-image: none !important;
+  background-color: var(--text, #dddddd) !important;
+  background-position: center !important;
+  --fatfish-image: url("__FATFISH_IMAGE__");
+  -webkit-mask-image: var(--fatfish-image);
+  mask-image: var(--fatfish-image);
+  -webkit-mask-source-type: alpha;
+  mask-mode: alpha;
+  -webkit-mask-size: auto __FATFISH_SIZE__%;
+  mask-size: auto __FATFISH_SIZE__%;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  opacity: __FATFISH_OPACITY__;
+}

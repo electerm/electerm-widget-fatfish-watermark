@@ -1,0 +1,46 @@
+{
+  "name": "fatfish-watermark",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Replace electerm's default terminal watermark with a theme-aware 大肥鱼 (DeepSeek whale-girl) line-art watermark.",
+  "main": "main.js",
+  "license": "MIT",
+  "author": "ZHAO Xudong",
+  "homepage": "https://github.com/electerm/electerm-widget-fatfish-watermark",
+  "scripts": {
+    "build": "node tools/build-watermark.js",
+    "test": "node --test test/*.test.js"
+  },
+  "electerm": {
+    "id": "fatfish-watermark",
+    "name": "Fatfish Terminal Watermark",
+    "description": "Replace the default electerm watermark with a 大肥鱼 / DeepSeek whale-girl line drawing that follows your theme's text colour, so it stays visible on dark, light and coloured backgrounds.",
+    "version": "1.0.0",
+    "type": "instance",
+    "singleInstance": true,
+    "persist": true,
+    "configs": [
+      {
+        "name": "opacity",
+        "label": "Opacity (%)",
+        "type": "number",
+        "default": 20,
+        "description": "How strong the watermark is, in percent. Clamped to 5–60. The default, 20, is about as subtle as electerm's built-in wordmark."
+      },
+      {
+        "name": "size",
+        "label": "Height (%)",
+        "type": "number",
+        "default": 78,
+        "description": "Watermark height as a percent of the terminal pane. Clamped to 30–95; the width follows the artwork's aspect ratio."
+      },
+      {
+        "name": "autoRun",
+        "label": "Apply on launch",
+        "type": "boolean",
+        "default": true,
+        "description": "Re-apply on every launch. This is the switch that puts the widget in electerm's auto-run list."
+      }
+    ]
+  }
+}
